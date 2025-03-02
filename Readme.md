@@ -3,7 +3,7 @@
 A professional-grade web dashboard to analyze stock portfolios, optimize asset allocation, and visualize portfolio performance.
 ## 🎨 Front-End Preview
 
-![Quant Portfolio Dashboard](Front-End.png)
+![Quant Portfolio Dashboard](front-end.png)
 
 ## 🚀 Features
 - **Live Stock Prices** using Yahoo Finance API
