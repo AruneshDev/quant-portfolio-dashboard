@@ -30,6 +30,11 @@ The Projections Page uses Monte Carlo Simulations to forecast portfolio growth b
 ✅ Expected returns & volatility
 🔹 How to Access the Projections Page?
 
-Once the dashboard is running: 1️⃣ Open http://localhost:8501
+Once the dashboard is running: 
+1️⃣ Open 
+```bash
+http://localhost:8501
+```
 2️⃣ Click 📈 "Go to Projections"
+
 3️⃣ View future portfolio performance using interactive charts
