@@ -1,44 +1,66 @@
-import streamlit as st
 import numpy as np
 import matplotlib.pyplot as plt
+import streamlit as st
 
-st.set_page_config(page_title="📈 Portfolio Projections", layout="wide")
-st.title("📈 Portfolio Projections")
-st.write("Estimate your future portfolio value using Monte Carlo simulations.")
+# 🎯 **Streamlit UI - User Inputs**
+st.title("📈 Monte Carlo Portfolio Projections")
 
-# 🚀 User Inputs
-num_simulations = st.slider("Number of Simulations", min_value=100, max_value=5000, value=1000)
-years = st.slider("Investment Horizon (Years)", min_value=1, max_value=10, value=5)
+# Sliders for user-defined parameters
+num_simulations = st.sidebar.slider("🔢 Number of Simulations", 100, 5000, 1000, step=100)
 
-# ✅ Ensure portfolio session state exists
-if "portfolio_value" not in st.session_state:
-    st.session_state.portfolio_value = 100000  # Default starting value
+# Convert years to trading days (1 year = 252 trading days)
+years = st.sidebar.slider("📅 Time Horizon (Years)", 1.0, 10.0, 5.0, step=0.5)  # 1 to 10 years
+time_horizon = int(years * 252)  # Convert selected years to days
 
-initial_value = st.session_state.portfolio_value
-expected_return = 0.07  # 7% average annual return
-volatility = 0.15  # 15% standard deviation
+# Get initial portfolio value from session state (default: 100000)
+initial_portfolio_value = st.sidebar.number_input(
+    "💰 Initial Portfolio Value ($)",
+    value=float(st.session_state.get("portfolio_value", 100000.0)),  # Ensure float value
+    step=5000.0  # Ensure float step to avoid errors
+)
 
-# 🚀 Monte Carlo Simulation
-simulations = []
-for _ in range(num_simulations):
-    future_value = [initial_value]
-    for _ in range(years * 252):  # 252 trading days per year
-        daily_return = np.random.normal(expected_return / 252, volatility / np.sqrt(252))
-        future_value.append(future_value[-1] * (1 + daily_return))
-    simulations.append(future_value)
+# User-defined market assumptions
+expected_annual_return = st.sidebar.slider("📈 Expected Annual Return (%)", -10.0, 30.0, 8.0, step=0.5) / 100
+annual_volatility = st.sidebar.slider("📊 Annual Volatility (%)", 5.0, 50.0, 20.0, step=0.5) / 100
 
-# 🔹 Plot Projections
-fig, ax = plt.subplots(figsize=(10, 4))
-ax.plot(np.array(simulations).T, alpha=0.1, color="blue")
-ax.set_title(f"Monte Carlo Simulations ({num_simulations} runs)")
+# Convert to daily return values
+mean_return = expected_annual_return / 252  # Convert annual return to daily return
+volatility = annual_volatility / np.sqrt(252)  # Convert annual volatility to daily volatility
+
+# 🧠 **Simulating Monte Carlo projections**
+np.random.seed(42)
+simulations = np.zeros((num_simulations, time_horizon))
+simulations[:, 0] = initial_portfolio_value
+
+for i in range(1, time_horizon):
+    simulations[:, i] = simulations[:, i-1] * (1 + np.random.normal(mean_return, volatility, num_simulations))
+
+# 📊 **Compute Statistics**
+avg_projection = simulations.mean(axis=0)
+min_projection = np.percentile(simulations, 5, axis=0)  # 5th percentile (worst-case)
+max_projection = np.percentile(simulations, 95, axis=0)  # 95th percentile (best-case)
+
+# 🎨 **Plot the Monte Carlo Projections**
+fig, ax = plt.subplots(figsize=(10, 5))
+
+# Plot min-max range as a shaded area
+ax.fill_between(range(time_horizon), min_projection, max_projection, color='blue', alpha=0.15, label="90% Confidence Interval")
+
+# Plot the main trend line (average projection)
+ax.plot(avg_projection, color='red', linewidth=2, label="Projected Growth")
+
+# Formatting the graph
+ax.set_title("Monte Carlo Portfolio Simulations", fontsize=14)
+ax.set_xlabel("Trading Days", fontsize=12)
+ax.set_ylabel("Portfolio Value ($)", fontsize=12)
+ax.legend()
+ax.grid(True, linestyle='--', alpha=0.5)
+
+# Display the plot
 st.pyplot(fig)
 
-# 🚀 Estimated Portfolio Value Range
-final_values = [sim[-1] for sim in simulations]
-st.write(f"📌 **Projected Portfolio Value (5-Year Estimate)**:")
-st.metric(label="🔹 Average Projection", value=f"${np.mean(final_values):,.2f}")
-st.metric(label="🔹 95% Confidence Interval", value=f"${np.percentile(final_values, 5):,.2f} - ${np.percentile(final_values, 95):,.2f}")
-
-st.markdown("---")
-if st.button("⬅ Go Back"):
-    st.switch_page("dashboard.py")
+# 📌 **Display Summary Statistics**
+st.markdown("### 📌 Projected Portfolio Value (End of Simulation):")
+st.markdown(f"**📊 Average Projection:**\n# ${avg_projection[-1]:,.2f}")
+st.markdown(f"**📉 5th Percentile (Worst-Case):**\n# ${min_projection[-1]:,.2f}")
+st.markdown(f"**📈 95th Percentile (Best-Case):**\n# ${max_projection[-1]:,.2f}")
