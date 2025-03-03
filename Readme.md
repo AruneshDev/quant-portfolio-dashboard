@@ -3,8 +3,8 @@
 A professional-grade web dashboard to analyze stock portfolios, optimize asset allocation, and visualize portfolio performance.
 ## 🎨 Front-End Preview
 
-![Quant Portfolio Dashboard](Front-End.png)
-
+![Quant Portfolio Dashboard](assets/front-end.png)
+![Quant Portfolio Projections](assets/Projections.png)
 ## 🚀 Features
 - **Live Stock Prices** using Yahoo Finance API
 - **Portfolio Risk & Performance Metrics** (Sharpe Ratio, Volatility, VaR)
@@ -22,3 +22,14 @@ cd quant-portfolio-dashboard
 ```bash
 docker compose up --build
 ```
+📊 Portfolio Projections Page
+
+The Projections Page uses Monte Carlo Simulations to forecast portfolio growth based on:
+✅ Number of simulations
+✅ Investment horizon (years)
+✅ Expected returns & volatility
+🔹 How to Access the Projections Page?
+
+Once the dashboard is running: 1️⃣ Open http://localhost:8501
+2️⃣ Click 📈 "Go to Projections"
+3️⃣ View future portfolio performance using interactive charts

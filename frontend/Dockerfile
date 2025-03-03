@@ -4,11 +4,8 @@ FROM python:3.10
 # Set working directory inside the container
 WORKDIR /app/frontend
 
-# Copy frontend files
-COPY ../frontend .
-
-# Copy requirements.txt explicitly
-COPY ../requirements.txt /app/frontend/requirements.txt  
+# Copy everything from the frontend folder into the container
+COPY . .
 
 # Install dependencies
 RUN pip install --no-cache-dir -r requirements.txt  
