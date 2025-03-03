@@ -25,6 +25,7 @@ docker compose up --build
 📊 Portfolio Projections Page
 
 The Projections Page uses Monte Carlo Simulations to forecast portfolio growth based on:
+
 ✅ Number of simulations
 
 ✅ Investment horizon (years)
