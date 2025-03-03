@@ -26,8 +26,11 @@ docker compose up --build
 
 The Projections Page uses Monte Carlo Simulations to forecast portfolio growth based on:
 ✅ Number of simulations
+
 ✅ Investment horizon (years)
+
 ✅ Expected returns based on weighted historical average return of portfolio
+
 🔹 How to Access the Projections Page?
 
 Once the dashboard is running: 
