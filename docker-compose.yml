@@ -1,20 +1,33 @@
+version: "3.8"
+
 services:
   backend:
     build:
       context: .
-      dockerfile: Dockerfile
-    container_name: quant_backend
+      dockerfile: backend/Dockerfile
+    volumes:
+      - ./backend:/app
     ports:
       - "8000:8000"
+    depends_on:
+      - data_storage
 
   frontend:
     build:
       context: .
       dockerfile: frontend/Dockerfile
-    container_name: quant_frontend
-    working_dir: /app/frontend
+    volumes:
+      - ./frontend:/app
     ports:
       - "8501:8501"
     depends_on:
       - backend
-    command: ["streamlit", "run", "frontend/dashboard.py", "--server.port", "8501", "--server.address", "0.0.0.0"]
+
+  data_storage:
+    image: postgres:latest
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: portfolio_db
+    ports:
+      - "5432:5432"

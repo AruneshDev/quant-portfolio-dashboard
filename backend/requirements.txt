@@ -1,0 +1,9 @@
+fastapi==0.115.11
+uvicorn==0.34.0
+yfinance==0.2.54
+numpy==1.26.4
+pandas==2.2.3
+scipy==1.15.2
+cython
+sqlalchemy
+psycopg2-binary

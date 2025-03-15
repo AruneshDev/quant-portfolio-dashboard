@@ -1,105 +1,129 @@
 import streamlit as st
 import pandas as pd
-import yfinance as yf
+import requests
+import plotly.graph_objects as go
 import plotly.express as px
 
-# 🎨 **Page Configuration**
+# 🎨 Set Page Config
 st.set_page_config(page_title="📈 Quant Portfolio Dashboard", layout="wide")
 
-# 📌 **Sidebar Logo & Title**
-st.sidebar.image("frontend/assets/logo.png", width=100)
-st.sidebar.title("📊 Portfolio Manager")
-st.sidebar.write("Track, analyze, and optimize your investments.")
+# 📌 Backend URL
+BACKEND_URL = "http://backend:8000"
 
-# 🔹 **List of Top 50 Tech Stocks (Ticker + Company Name)**
+# 📌 Sidebar
+st.sidebar.image("assets/logo.png", width=100)
+st.sidebar.title("📊 Portfolio Manager")
+st.sidebar.write("Track, analyze, and optimize your investments in real-time.")
+
+# 🔹 List of Top 10 Tech Stocks
 TECH_STOCKS = {
     "AAPL": "Apple", "MSFT": "Microsoft", "GOOGL": "Alphabet", "AMZN": "Amazon", "NVDA": "Nvidia",
-    "META": "Meta Platforms", "TSLA": "Tesla", "ADBE": "Adobe", "CRM": "Salesforce", "AMD": "Advanced Micro Devices",
-    "INTC": "Intel", "CSCO": "Cisco", "IBM": "IBM Corporation", "ORCL": "Oracle", "PYPL": "PayPal",
-    "NFLX": "Netflix", "UBER": "Uber Technologies", "SQ": "Block, Inc.", "SHOP": "Shopify", "TWLO": "Twilio",
-    "SNOW": "Snowflake", "PLTR": "Palantir Technologies", "FSLY": "Fastly", "DOCU": "DocuSign", "ROKU": "Roku",
-    "NET": "Cloudflare", "ZI": "ZoomInfo", "DDOG": "Datadog", "CRWD": "CrowdStrike", "ZS": "Zscaler",
-    "MDB": "MongoDB", "OKTA": "Okta", "TEAM": "Atlassian", "ASAN": "Asana", "SMAR": "Smartsheet",
-    "HUBS": "HubSpot", "SE": "Sea Limited", "BABA": "Alibaba", "JD": "JD.com", "PDD": "Pinduoduo",
-    "TSM": "Taiwan Semiconductor", "AVGO": "Broadcom", "TXN": "Texas Instruments", "QCOM": "Qualcomm",
-    "MU": "Micron Technology", "LRCX": "Lam Research", "NXPI": "NXP Semiconductors", "STX": "Seagate",
-    "WDAY": "Workday", "SNAP": "Snap Inc."
+    "META": "Meta Platforms", "TSLA": "Tesla", "ADBE": "Adobe", "CRM": "Salesforce", "AMD": "Advanced Micro Devices"
 }
 
-# ✅ **Ensure Session State for Portfolio**
+# ✅ Ensure session state exists
 if "portfolio" not in st.session_state:
     st.session_state.portfolio = {}
 
 if "prices" not in st.session_state:
     st.session_state.prices = {}
 
-# 🔹 **User Portfolio Input (Stock Selection & Quantity)**
+# 🔹 User Portfolio Input
 st.sidebar.subheader("📌 Add Your Stocks")
 selected_ticker = st.sidebar.selectbox(
-    "Select a Tech Stock:", list(TECH_STOCKS.keys()), format_func=lambda x: f"{x} ({TECH_STOCKS[x]})"
+    "Select a Tech Stock:",
+    list(TECH_STOCKS.keys()),
+    format_func=lambda x: f"{x} ({TECH_STOCKS[x]})"
 )
 quantity = st.sidebar.number_input("Enter Quantity", min_value=1, step=1)
 
-if st.sidebar.button("➕ Add to Portfolio"):
-    if selected_ticker in st.session_state.portfolio:
-        st.session_state.portfolio[selected_ticker] += quantity
-    else:
-        st.session_state.portfolio[selected_ticker] = quantity
-    st.rerun()  # ✅ Instantly updates the UI with new stock
+if st.sidebar.button("Add to Portfolio"):
+    st.session_state.portfolio[selected_ticker] = st.session_state.portfolio.get(selected_ticker, 0) + quantity
+    st.rerun()  # Refresh UI on adding stock
 
-# ✅ **Function to Fetch Live Stock Prices**
+# ✅ Function to Fetch Live Stock Prices from Backend
 def fetch_prices():
     prices = {}
     for stock in st.session_state.portfolio.keys():
-        stock_data = yf.Ticker(stock).history(period="1d")
-        prices[stock] = stock_data["Close"].iloc[-1] if not stock_data.empty else None
+        response = requests.get(f"{BACKEND_URL}/price/{stock}")
+        if response.status_code == 200 and "price" in response.json():
+            prices[stock] = response.json().get("price", 0.0)
+        else:
+            prices[stock] = 0.0  # Handle errors gracefully
     return prices
 
-# 🔹 **Portfolio Summary Section**
+# 🔹 Portfolio Summary Section
 st.header("📊 Portfolio Overview")
 
 if st.session_state.portfolio:
-    portfolio_df = pd.DataFrame({"Stock": st.session_state.portfolio.keys(), "Shares": st.session_state.portfolio.values()})
-
-    # ✅ Fetch or Use Stored Prices
+    # ✅ Fetch prices if not already stored
     if not st.session_state.prices:
         st.session_state.prices = fetch_prices()
 
-    portfolio_df["Price"] = portfolio_df["Stock"].map(st.session_state.prices)
-    portfolio_df["Total Value"] = portfolio_df["Shares"] * portfolio_df["Price"]
+    # ✅ Create Portfolio DataFrame
+    portfolio_df = pd.DataFrame([
+        {
+            "Stock": stock,
+            "Shares": shares,
+            "Price": st.session_state.prices.get(stock, 0.0),
+            "Total Value": shares * st.session_state.prices.get(stock, 0.0)
+        }
+        for stock, shares in st.session_state.portfolio.items()
+    ])
 
-    # 🚀 **Show Total Portfolio Value on Top**
-    total_value = portfolio_df["Total Value"].sum(skipna=True)
-
+    # 🚀 Display Total Portfolio Value
+    total_value = portfolio_df["Total Value"].sum()
     col1, col2 = st.columns([3, 1])
     col1.metric(label="💰 Total Portfolio Value", value=f"${total_value:,.2f}")
 
-    # ✅ **Refresh Button with Proper Function Call**
+    # ✅ Refresh Button with Proper Function Call
     if col2.button("🔄 Refresh Prices", key="refresh_prices_button"):
         st.session_state.prices = fetch_prices()
-        st.rerun()  # ✅ UI instantly refreshes with new prices
+        st.rerun()
 
-    # ✅ **Store Portfolio Value for Projections Page**
+    # ✅ Store portfolio value for projections
     st.session_state["portfolio_value"] = total_value
 
-    # 📊 **Display Portfolio Table**
+    # 📊 Portfolio Table
     st.dataframe(portfolio_df.style.format({"Price": "${:.2f}", "Total Value": "${:.2f}"}))
 
-    # 📊 **Portfolio Allocation Pie Chart**
+    # 📊 Portfolio Allocation Pie Chart
     fig = px.pie(portfolio_df, names="Stock", values="Total Value", title="Portfolio Allocation")
     st.plotly_chart(fig)
 
-    # 🔹 **Show Portfolio Value in Sidebar**
-    st.sidebar.write(f"💰 **Total Portfolio Value:** ${total_value:,.2f}")
+    # 📈 Stock Price Graph
+    selected_graph_stock = st.selectbox("📊 Select a Stock to Visualize:", portfolio_df["Stock"])
 
-    # 🚨 **Warning for Missing Prices**
-    missing_stocks = [stock for stock, price in st.session_state.prices.items() if price is None]
-    if missing_stocks:
-        st.sidebar.warning(f"⚠️ No price data for: {', '.join(missing_stocks)}.")
+    # ✅ Fetch historical stock data from Backend
+    response = requests.get(f"{BACKEND_URL}/historical/{selected_graph_stock}")
+
+    if response.status_code == 200 and "historical_data" in response.json():
+        stock_data = response.json()["historical_data"]
+
+        if stock_data:
+            df = pd.DataFrame(stock_data)
+            df["date"] = pd.to_datetime(df["date"])
+            df.set_index("date", inplace=True)
+
+            fig = go.Figure()
+            fig.add_trace(go.Scatter(
+                x=df.index,
+                y=df["close"],
+                mode='lines',
+                name=f'{selected_graph_stock} Price'
+            ))
+
+            fig.update_layout(
+                title=f"📈 {selected_graph_stock} Price Trend",
+                xaxis_title='Date',
+                yaxis_title='Price ($)',
+                template="plotly_dark"
+            )
+            st.plotly_chart(fig)
+        else:
+            st.warning(f"❗ No historical data available for {selected_graph_stock}.")
+    else:
+        st.error(f"🚨 Error fetching historical data for {selected_graph_stock}. Try again later.")
 
 else:
     st.warning("📌 Add stocks to your portfolio to see data.")
-
-# 🔹 **Navigation to Projections Page**
-if st.button("📈 Go to Projections"):
-    st.switch_page("pages/projections.py")
