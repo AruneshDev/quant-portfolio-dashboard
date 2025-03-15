@@ -3,8 +3,11 @@
 A professional-grade web dashboard to analyze stock portfolios, optimize asset allocation, and visualize portfolio performance.
 ## 🎨 Front-End Preview
 
-![Quant Portfolio Dashboard](frontend/assets/dashboard.png)
-![Quant Portfolio Projections](frontend/assets/Projections_1.png)
+![Quant Portfolio Dashboard](frontend/assets/dashboard_new.png)
+![Quant Portfolio Trend](frontend/assets/graph.png)
+
+![Quant Portfolio Projections Graph](frontend/assets/projected_growth.png)
+![Quant Portfolio Estimated Value Projection](frontend/assets/estimated_value.png)
 ## 🚀 Features
 - **Live Stock Prices** using Yahoo Finance API
 - **Portfolio Risk & Performance Metrics** (Sharpe Ratio, Volatility, VaR)
